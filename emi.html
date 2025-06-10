@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EMI & Amortization Schedule Calculator</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    label { display: inline-block; width: 200px; margin-bottom: 0.5em; }
+    input, select { padding: 5px; margin-bottom: 0.5em; }
+    .container { margin-bottom: 1em; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }
+    th { background-color: #f2f2f2; }
+    td:first-child, th:first-child { text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>EMI & Amortization Schedule Calculator</h1>
+  
+  <div class="container">
+    <label for="principal">Principal Amount:</label>
+    <input type="number" id="principal" placeholder="Enter principal" oninput="calculateEMI()">
+  </div>
+  
+  <div class="container">
+    <label for="interest">Annual Interest Rate (%):</label>
+    <input type="number" id="interest" step="0.01" placeholder="Enter annual rate" oninput="calculateEMI()">
+  </div>
+  
+  <div class="container">
+    <label for="tenure">Loan Tenure:</label>
+    <input type="number" id="tenure" placeholder="Enter tenure" oninput="calculateEMI()">
+    <select id="tenureType" onchange="calculateEMI()">
+      <option value="months">Months</option>
+      <option value="years">Years</option>
+    </select>
+  </div>
+  
+  <div class="container">
+    <h2>Monthly EMI: <span id="emi">0.00</span></h2>
+  </div>
+  
+  <div class="container">
+    <h2>Total Interest Paid: <span id="interestPaid">0.00</span></h2>
+  </div>
+  
+  <div class="container">
+    <h2>Amortization Schedule</h2>
+    <table id="scheduleTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>EMI Payment</th>
+          <th>Interest</th>
+          <th>Principal</th>
+          <th>Remaining Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Payment schedule rows will be added here -->
+      </tbody>
+    </table>
+  </div>
+  
+  <script>
+    function calculateEMI() {
+      // Retrieve and parse input values
+      var principal = parseFloat(document.getElementById("principal").value);
+      var interest = parseFloat(document.getElementById("interest").value);
+      var tenure = parseFloat(document.getElementById("tenure").value);
+      var tenureType = document.getElementById("tenureType").value;
+      
+      // Validate input; if any field is invalid, show results as 0 and clear table.
+      if (isNaN(principal) || isNaN(interest) || isNaN(tenure)) {
+        document.getElementById("emi").innerText = "0.00";
+        document.getElementById("interestPaid").innerText = "0.00";
+        document.querySelector("#scheduleTable tbody").innerHTML = "";
+        return;
+      }
+      
+      // Convert tenure to months if input is in years
+      if (tenureType === "years") {
+        tenure *= 12;
+      }
+      
+      // Calculate monthly interest rate (annual rate is given in percent)
+      var monthlyRate = (interest / 100) / 12;
+      
+      // EMI formula: EMI = [P * r * (1+r)^n] / [(1+r)^n - 1]
+      var powerTerm = Math.pow(1 + monthlyRate, tenure);
+      var numerator = principal * monthlyRate * powerTerm;
+      var denominator = powerTerm - 1;
+      var emi = numerator / denominator;
+      
+      // Handle potential division by zero or invalid result
+      if (!isFinite(emi)) {
+        emi = 0;
+      }
+      
+      // Calculate total interest paid over the loan tenure
+      var totalPayment = emi * tenure;
+      var totalInterest = totalPayment - principal;
+      
+      // Update EMI and total interest in the HTML
+      document.getElementById("emi").innerText = emi.toFixed(2);
+      document.getElementById("interestPaid").innerText = totalInterest.toFixed(2);
+      
+      // Build the amortization schedule table
+      var tbody = document.querySelector("#scheduleTable tbody");
+      tbody.innerHTML = ""; // Clear previous table rows
+      var outstanding = principal;
+      
+      for (var i = 1; i <= tenure; i++) {
+        // Interest for this EMI
+        var interestComponent = outstanding * monthlyRate;
+        // Principal component is the remainder of the EMI
+        var principalComponent = emi - interestComponent;
+        // Update remaining balance
+        outstanding -= principalComponent;
+        // To prevent a negative balance in the last installment, adjust if necessary
+        if (outstanding < 0) outstanding = 0;
+        
+        // Create a table row for this EMI
+        var row = document.createElement("tr");
+        
+        var cellNumber = document.createElement("td");
+        cellNumber.innerText = i;
+        row.appendChild(cellNumber);
+        
+        var cellEMI = document.createElement("td");
+        cellEMI.innerText = emi.toFixed(2);
+        row.appendChild(cellEMI);
+        
+        var cellInterest = document.createElement("td");
+        cellInterest.innerText = interestComponent.toFixed(2);
+        row.appendChild(cellInterest);
+        
+        var cellPrincipal = document.createElement("td");
+        cellPrincipal.innerText = principalComponent.toFixed(2);
+        row.appendChild(cellPrincipal);
+        
+        var cellBalance = document.createElement("td");
+        cellBalance.innerText = outstanding.toFixed(2);
+        row.appendChild(cellBalance);
+        
+        tbody.appendChild(row);
+      }
+    }
+  </script>
+</body>
+</html>
