@@ -1,5 +1,7 @@
 # EMI Calculator with Prepayment Simulator
 
+[Try Live Demo](https://sovereignstack.github.io/emi/prepay.html)
+
 A web-based EMI (Equated Monthly Installment) calculator that helps users calculate loan EMIs and visualize the impact of prepayments on their loan schedule.
 
 ## Features
