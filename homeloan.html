@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Home Affordability Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; padding: 2em; }
+    .container { max-width: 560px; margin: auto; background: #fff; border-radius: 14px; box-shadow: 0 4px 24px rgba(0,0,0,0.05); padding: 2em; }
+    h2 { text-align: center; margin-bottom: 1.1em; }
+    .row { display: flex; align-items: center; margin-bottom: 1.3em; }
+    .label { flex: 1.7; font-weight: 500; }
+    .input-group { flex: 2; display: flex; align-items: center; gap: 0.7em; }
+    input[type="range"] { width: 100%; }
+    input[type="number"], input[type="text"] { width: 100px; padding: 0.3em; }
+    .output { background: #f0f8ff; padding: 1em; border-radius: 8px; margin-top: 2em; }
+    .output .row { margin-bottom: 0.7em; }
+    .value { font-weight: bold; font-size: 1.13em; }
+    @media (max-width: 570px) {
+      .container { padding: 1em; }
+      .row { flex-direction: column; align-items: flex-start; }
+      .input-group { width: 100%; }
+    }
+    .sync-note { color: #666; font-size: 0.92em; margin-bottom: 1.3em; text-align: center; }
+    .sub-label { color: #888; font-size: 0.95em; margin-left: 0.4em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🏠 Home Affordability Calculator</h2>
+    <div class="sync-note">
+      You can adjust either your <b>in-hand salary</b> or the <b>target home price</b>. All numbers update instantly.<br>
+      <span style="color:#0078d4">All salary and EMI values are monthly.</span>
+    </div>
+
+    <div class="row">
+      <span class="label">EMI per ₹1 crore loan (lakh/month):</span>
+      <div class="input-group">
+        <input id="emiPerCrore" type="number" value="1" min="0.01" max="5" step="0.01">
+        <span>Lakh</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="label">EMI-to-Income Ratio:</span>
+      <div class="input-group">
+        <input id="emiRatio" type="number" value="0.5" min="0.1" max="1" step="0.01">
+        <span>(fraction, e.g., 0.5)</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="label">Upfront Payment (%):</span>
+      <div class="input-group">
+        <input id="upfrontPct" type="number" value="20" min="5" max="99" step="1">
+        <span>%</span>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="label">In-hand to Gross Salary Ratio:</span>
+      <div class="input-group">
+        <input id="inHandToGross" type="number" value="0.68" min="0.1" max="1" step="0.01">
+      </div>
+    </div>
+    <div class="row">
+      <span class="label">In-hand to CTC Ratio:</span>
+      <div class="input-group">
+        <input id="inHandToCTC" type="number" value="0.57" min="0.1" max="1" step="0.01">
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="label">Required Salary - In-hand (₹ lakh/month):</span>
+      <div class="input-group">
+        <input id="salarySlider" type="range" min="0.1" max="50" step="0.01" value="1.00">
+        <input id="salaryBox" type="number" min="0.1" max="50" step="0.01" value="1.00">
+        <span>Lakh</span>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="label">Target Home Price (₹ crore):</span>
+      <div class="input-group">
+        <input id="homeSlider" type="range" min="0.2" max="20" step="0.01" value="1.00">
+        <input id="homeBox" type="number" min="0.2" max="20" step="0.01" value="1.00">
+        <span>Crore</span>
+      </div>
+    </div>
+
+    <div class="output">
+      <div class="row">
+        <span class="label">🏡 Max Home Price You Can Afford:</span>
+        <span class="value" id="maxHomePrice">₹0</span>
+      </div>
+      <div class="row">
+        <span class="label">💸 Upfront Amount Needed:</span>
+        <span class="value" id="upfrontAmount">₹0</span>
+      </div>
+      <div class="row">
+        <span class="label">🏦 Max Loan You Can Get:</span>
+        <span class="value" id="loanAmount">₹0</span>
+      </div>
+      <div class="row">
+        <span class="label">📅 Max EMI Allowed:</span>
+        <span class="value" id="maxEmi">₹0</span>
+      </div>
+      <div class="row">
+        <span class="label">Required Salary - In-hand (₹ lakh/month):</span>
+        <span class="value" id="salaryNeeded">—</span>
+      </div>
+      <div class="row">
+        <span class="label">Required Salary - Gross (₹ lakh/year):</span>
+        <span class="value" id="salaryGrossNeeded">—</span>
+      </div>
+      <div class="row">
+        <span class="label">Required Salary - CTC (₹ lakh/year):</span>
+        <span class="value" id="salaryCTCNeeded">—</span>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Format INR for outputs
+    function formatINR(x) {
+      return '₹' + Number(x).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    }
+
+    // Inputs
+    const emiPerCrore = document.getElementById('emiPerCrore');
+    const emiRatio = document.getElementById('emiRatio');
+    const upfrontPct = document.getElementById('upfrontPct');
+    const inHandToGross = document.getElementById('inHandToGross');
+    const inHandToCTC = document.getElementById('inHandToCTC');
+    // Salary
+    const salarySlider = document.getElementById('salarySlider');
+    const salaryBox = document.getElementById('salaryBox');
+    // Home price
+    const homeSlider = document.getElementById('homeSlider');
+    const homeBox = document.getElementById('homeBox');
+
+    // Outputs
+    const maxHomePrice = document.getElementById('maxHomePrice');
+    const upfrontAmount = document.getElementById('upfrontAmount');
+    const loanAmount = document.getElementById('loanAmount');
+    const maxEmi = document.getElementById('maxEmi');
+    const salaryNeeded = document.getElementById('salaryNeeded');
+    const salaryGrossNeeded = document.getElementById('salaryGrossNeeded');
+    const salaryCTCNeeded = document.getElementById('salaryCTCNeeded');
+
+    // Two-way binding for salary
+    let salaryEditOrigin = null;
+    salarySlider.addEventListener('input', () => {
+      salaryEditOrigin = 'slider';
+      salaryBox.value = parseFloat(salarySlider.value).toFixed(2);
+      updateFromSalary();
+      salaryEditOrigin = null;
+    });
+    salaryBox.addEventListener('input', () => {
+      salaryEditOrigin = 'box';
+      let v = parseFloat(salaryBox.value);
+      if (isNaN(v)) v = 1;
+      if (v < 1) v = 1;
+      if (v > 50) v = 50;
+      salaryBox.value = v.toFixed(2);
+      salarySlider.value = v;
+      updateFromSalary();
+      salaryEditOrigin = null;
+    });
+
+    // Two-way binding for home price
+    let homeEditOrigin = null;
+    homeSlider.addEventListener('input', () => {
+      homeEditOrigin = 'slider';
+      homeBox.value = parseFloat(homeSlider.value).toFixed(2);
+      updateFromHome();
+      homeEditOrigin = null;
+    });
+    homeBox.addEventListener('input', () => {
+      homeEditOrigin = 'box';
+      let v = parseFloat(homeBox.value);
+      if (isNaN(v)) v = 0.2;
+      if (v < 0.2) v = 0.2;
+      if (v > 20) v = 20;
+      homeBox.value = v.toFixed(2);
+      homeSlider.value = v;
+      updateFromHome();
+      homeEditOrigin = null;
+    });
+
+    // Reactivity for all other inputs
+    [
+      emiPerCrore, emiRatio, upfrontPct, inHandToGross, inHandToCTC
+    ].forEach(inp => {
+      inp.addEventListener('input', () => {
+        if (salaryEditOrigin) {
+          updateFromSalary();
+        } else if (homeEditOrigin) {
+          updateFromHome();
+        } else {
+          updateFromSalary();
+        }
+      });
+    });
+
+    // Given salary, find max home price
+    function updateFromSalary() {
+      // Read all parameters
+      const emi = (parseFloat(emiPerCrore.value) || 1) * 1e5; // lakh to Rs
+      const ratio = parseFloat(emiRatio.value) || 0.5;
+      const upfront = parseFloat(upfrontPct.value) || 20;
+      const inHandRatioGross = parseFloat(inHandToGross.value) || 0.68;
+      const inHandRatioCTC = parseFloat(inHandToCTC.value) || 0.57;
+      const salaryLakh = parseFloat(salaryBox.value) || 2.5;
+      const salaryInHand = salaryLakh * 1e5;
+
+      // Calculate
+      const maxEmiAllowed = ratio * salaryInHand;
+      const eligibleLoan = (maxEmiAllowed / emi) * 1e7;
+      const upfrontFraction = upfront / 100.0;
+      const maxHome = eligibleLoan / (1 - upfrontFraction);
+      const upfrontAmt = maxHome * upfrontFraction;
+
+      // Update home price sliders unless user just edited them
+      if (!homeEditOrigin) {
+        let maxHomeCr = maxHome / 1e7;
+        if (maxHomeCr < 0.2) maxHomeCr = 0.2;
+        if (maxHomeCr > 20) maxHomeCr = 20;
+        homeSlider.value = homeBox.value = maxHomeCr.toFixed(2);
+      }
+
+      // For current home price, what's the required salary?
+      let homeCr = parseFloat(homeBox.value) || 1.0;
+      let homeRs = homeCr * 1e7;
+      let loanNeeded = homeRs * (1 - upfrontFraction);
+      let emiForLoanNeeded = (loanNeeded / 1e7) * emi;
+      let salaryReqd = emiForLoanNeeded / ratio / 1e5;
+
+      // Gross and CTC (annual, lakh/year)
+      let grossReqdAnnual = (salaryReqd / (inHandRatioGross || 0.0001)) * 12;
+      let ctcReqdAnnual = (salaryReqd / (inHandRatioCTC || 0.0001)) * 12;
+
+      // Display
+      maxEmi.textContent = formatINR(maxEmiAllowed);
+      loanAmount.textContent = formatINR(eligibleLoan);
+      maxHomePrice.textContent = formatINR(maxHome);
+      upfrontAmount.textContent = formatINR(upfrontAmt);
+
+      salaryNeeded.textContent = salaryReqd.toFixed(2);
+      salaryGrossNeeded.textContent = grossReqdAnnual.toFixed(2);
+      salaryCTCNeeded.textContent = ctcReqdAnnual.toFixed(2);
+    }
+
+    // Given home price, find required salary
+    function updateFromHome() {
+      // Read parameters
+      const emi = (parseFloat(emiPerCrore.value) || 1) * 1e5; // lakh to Rs
+      const ratio = parseFloat(emiRatio.value) || 0.5;
+      const upfront = parseFloat(upfrontPct.value) || 20;
+      const inHandRatioGross = parseFloat(inHandToGross.value) || 0.68;
+      const inHandRatioCTC = parseFloat(inHandToCTC.value) || 0.57;
+      const homeCr = parseFloat(homeBox.value) || 1.0;
+      const homeRs = homeCr * 1e7;
+      const upfrontFraction = upfront / 100.0;
+      const loanNeeded = homeRs * (1 - upfrontFraction);
+      const upfrontAmt = homeRs * upfrontFraction;
+      const emiForLoan = (loanNeeded / 1e7) * emi;
+      const salaryNeededVal = emiForLoan / ratio;
+
+      // Update salary sliders unless user just edited them
+      if (!salaryEditOrigin) {
+        let salaryLakh = salaryNeededVal / 1e5;
+        if (salaryLakh < 1) salaryLakh = 1;
+        if (salaryLakh > 50) salaryLakh = 50;
+        salarySlider.value = salaryBox.value = salaryLakh.toFixed(2);
+      }
+
+      // Also show max home price affordable for the calculated salary
+      const maxEmiAllowed = ratio * salaryNeededVal;
+      const eligibleLoan = (maxEmiAllowed / emi) * 1e7;
+      const maxHome = eligibleLoan / (1 - upfrontFraction);
+
+      // Gross and CTC (annual, lakh/year)
+      let salaryReqdLakh = salaryNeededVal / 1e5;
+      let grossReqdAnnual = (salaryReqdLakh / (inHandRatioGross || 0.0001)) * 12;
+      let ctcReqdAnnual = (salaryReqdLakh / (inHandRatioCTC || 0.0001)) * 12;
+
+      // Display
+      maxEmi.textContent = formatINR(maxEmiAllowed);
+      loanAmount.textContent = formatINR(loanNeeded);
+      maxHomePrice.textContent = formatINR(homeRs);
+      upfrontAmount.textContent = formatINR(upfrontAmt);
+
+      salaryNeeded.textContent = salaryReqdLakh.toFixed(2);
+      salaryGrossNeeded.textContent = grossReqdAnnual.toFixed(2);
+      salaryCTCNeeded.textContent = ctcReqdAnnual.toFixed(2);
+    }
+
+    // Initial render
+    updateFromSalary();
+  </script>
+</body>
+</html>
