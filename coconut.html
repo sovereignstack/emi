@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coconut Land Valuator</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(170deg, #f5efe3 0%, #ede4d3 40%, #e6ddc8 100%);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .container { max-width: 520px; margin: 0 auto; padding: 32px 20px 40px; }
+  .header { text-align: center; margin-bottom: 32px; }
+  .header .icon { font-size: 42px; margin-bottom: 4px; }
+  .header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 28px; font-weight: 700; color: #3a3226;
+    margin: 0 0 6px; letter-spacing: -0.02em;
+  }
+  .header p {
+    font-size: 14px; color: #8b7355; margin: 0;
+    font-style: italic; font-family: 'Fraunces', serif;
+  }
+  .card {
+    background: #fff; border-radius: 18px;
+    padding: 24px 22px 6px;
+    box-shadow: 0 2px 20px rgba(90,70,40,0.07);
+    margin-bottom: 20px;
+  }
+  .card.invest { margin-bottom: 24px; }
+  .section-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title.green { color: #3a5a30; }
+  .section-title.brown { color: #8b7355; }
+  .section-title .bar {
+    width: 20px; height: 2px; border-radius: 1px; display: inline-block;
+  }
+  .section-title.green .bar { background: #3a5a30; }
+  .section-title.brown .bar { background: #8b7355; }
+
+  .field { margin-bottom: 18px; }
+  .field-label {
+    display: block; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: #6b5e4c; margin-bottom: 6px;
+  }
+  .field-row { display: flex; align-items: center; }
+  .field-row input[type="number"] {
+    flex: 1; padding: 12px 14px; font-size: 18px;
+    font-family: 'Fraunces', serif; font-weight: 500;
+    border: 2px solid #d4c9b0; border-radius: 10px 0 0 10px;
+    background: #faf6ef; color: #3a3226; outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-row input[type="number"]:focus { border-color: #8b7355; }
+  .field-unit {
+    padding: 12px 14px; font-size: 13px; font-weight: 600;
+    background: #e8dfc9; color: #6b5e4c;
+    border: 2px solid #d4c9b0; border-left: none;
+    border-radius: 0 10px 10px 0; white-space: nowrap;
+  }
+
+  .toggle-btn {
+    padding: 12px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif;
+    font-weight: 600; border: 2px solid #d4c9b0; border-left: none;
+    background: #e8dfc9; color: #6b5e4c; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .toggle-btn.active { background: #3a5a30; color: #fff; border-color: #3a5a30; }
+  .toggle-btn.last { border-radius: 0 10px 10px 0; }
+
+  .unit-selector { display: flex; gap: 8px; }
+  .unit-btn {
+    flex: 1; padding: 10px 0; font-size: 14px;
+    font-family: 'DM Sans', sans-serif; font-weight: 600;
+    border: 2px solid #d4c9b0; border-radius: 10px;
+    background: transparent; color: #6b5e4c;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .unit-btn.active { border-color: #3a5a30; background: #3a5a30; color: #fff; }
+
+  .results { display: none; }
+  .results.visible { display: block; }
+  .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+  .result-card {
+    background: #faf6ef; border-radius: 14px; padding: 18px 20px;
+    border: 2px solid #d4c9b0;
+  }
+  .result-card.accent {
+    background: linear-gradient(135deg, #3a5a30 0%, #4a6e3a 100%);
+    border: none; padding: 22px 20px;
+  }
+  .result-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #8b7355; margin-bottom: 6px;
+  }
+  .result-card.accent .result-label { color: rgba(255,255,255,0.7); }
+  .result-value {
+    font-size: 22px; font-family: 'Fraunces', serif;
+    font-weight: 700; color: #3a3226; line-height: 1.2;
+  }
+  .result-card.accent .result-value { font-size: 26px; color: #fff; }
+  .result-sub { font-size: 12px; color: #8b7355; margin-top: 4px; }
+  .result-card.accent .result-sub { color: rgba(255,255,255,0.6); }
+
+  .explain {
+    margin-top: 16px; padding: 16px 18px;
+    background: rgba(58,90,48,0.06); border-radius: 12px;
+    border-left: 3px solid #3a5a30;
+    font-size: 12px; color: #5a4e3a; line-height: 1.7;
+  }
+  .explain strong { color: #3a5a30; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="icon">🥥</div>
+    <h1>Coconut Land Valuator</h1>
+    <p>What should you pay for plantation land?</p>
+  </div>
+
+  <!-- Plantation Parameters -->
+  <div class="card">
+    <div class="section-title green"><span class="bar"></span> Plantation Parameters</div>
+
+    <div class="field">
+      <label class="field-label">📏 Distance Between Trees</label>
+      <div class="field-row">
+        <input type="number" id="spacing" value="8" min="1" step="0.5">
+        <button class="toggle-btn active" id="btn-feet" onclick="setSpacingUnit('feet')">ft</button>
+        <button class="toggle-btn last" id="btn-meters" onclick="setSpacingUnit('meters')">m</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">🌴 Yield Per Tree Per Year</label>
+      <div class="field-row">
+        <input type="number" id="yield" value="80" min="1" step="1">
+        <span class="field-unit">coconuts</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">💰 Sale Price Per Coconut</label>
+      <div class="field-row">
+        <input type="number" id="price" value="25" min="0.5" step="0.5">
+        <span class="field-unit">₹</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Investment Criteria -->
+  <div class="card invest">
+    <div class="section-title brown"><span class="bar"></span> Investment Criteria</div>
+
+    <div class="field">
+      <label class="field-label">📈 Target Annual ROI</label>
+      <div class="field-row">
+        <input type="number" id="roi" value="10" min="1" step="0.5">
+        <span class="field-unit">%</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">🗺️ Land Unit</label>
+      <div class="unit-selector">
+        <button class="unit-btn active" id="btn-acre" onclick="setLandUnit('acre')">Acre</button>
+        <button class="unit-btn" id="btn-hectare" onclick="setLandUnit('hectare')">Hectare</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results visible" id="results">
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-label" id="r-trees-label">Trees / Acre</div>
+        <div class="result-value" id="r-trees">63</div>
+        <div class="result-sub" id="r-trees-sub">8ft × 8ft grid</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">Coconuts / Year</div>
+        <div class="result-value" id="r-coconuts">5,040</div>
+        <div class="result-sub" id="r-coconuts-sub">80 per tree</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <div class="result-card">
+        <div class="result-label" id="r-rev-label">Annual Revenue / Acre</div>
+        <div class="result-value" id="r-revenue">₹1,26,000</div>
+        <div class="result-sub" id="r-rev-sub">5,040 × ₹25</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="result-card accent">
+        <div class="result-label" id="r-price-label">Max Land Price / Acre for 10% ROI</div>
+        <div class="result-value" id="r-max-price">₹12,60,000</div>
+        <div class="result-sub">Pay up to this to achieve your target return</div>
+      </div>
+    </div>
+
+    <div class="explain" id="explain"></div>
+  </div>
+</div>
+
+<script>
+const SQMT_PER_ACRE = 4046.86;
+const SQMT_PER_HECTARE = 10000;
+const FEET_TO_METERS = 0.3048;
+
+let spacingUnit = 'feet';
+let landUnit = 'acre';
+const unitLabels = { acre: 'Acre', hectare: 'Hectare' };
+
+function formatCurrency(val) {
+  if (val >= 1e7) return '₹' + (val / 1e7).toFixed(2) + ' Cr';
+  if (val >= 1e5) return '₹' + (val / 1e5).toFixed(2) + ' L';
+  return '₹' + val.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+}
+
+function setSpacingUnit(u) {
+  spacingUnit = u;
+  document.getElementById('btn-feet').classList.toggle('active', u === 'feet');
+  document.getElementById('btn-meters').classList.toggle('active', u === 'meters');
+  calculate();
+}
+
+function setLandUnit(u) {
+  landUnit = u;
+  document.getElementById('btn-acre').classList.toggle('active', u === 'acre');
+  document.getElementById('btn-hectare').classList.toggle('active', u === 'hectare');
+  calculate();
+}
+
+function calculate() {
+  const spacing = parseFloat(document.getElementById('spacing').value) || 0;
+  const yieldPerTree = parseFloat(document.getElementById('yield').value) || 0;
+  const pricePerCoconut = parseFloat(document.getElementById('price').value) || 0;
+  const targetROI = parseFloat(document.getElementById('roi').value) || 0;
+
+  const resultsEl = document.getElementById('results');
+
+  if (spacing <= 0 || yieldPerTree <= 0 || pricePerCoconut <= 0 || targetROI <= 0) {
+    resultsEl.classList.remove('visible');
+    return;
+  }
+  resultsEl.classList.add('visible');
+
+  const spacingMeters = spacingUnit === 'feet' ? spacing * FEET_TO_METERS : spacing;
+  const areaPerTree = spacingMeters * spacingMeters;
+  const unitArea = landUnit === 'acre' ? SQMT_PER_ACRE : SQMT_PER_HECTARE;
+
+  const treesPerUnit = Math.floor(unitArea / areaPerTree);
+  const totalCoconuts = treesPerUnit * yieldPerTree;
+  const annualRevenue = totalCoconuts * pricePerCoconut;
+  const maxLandPrice = annualRevenue / (targetROI / 100);
+
+  const uLabel = unitLabels[landUnit];
+  const suf = spacingUnit === 'feet' ? 'ft' : 'm';
+
+  document.getElementById('r-trees-label').textContent = 'Trees / ' + uLabel;
+  document.getElementById('r-trees').textContent = treesPerUnit.toLocaleString('en-IN');
+  document.getElementById('r-trees-sub').textContent = spacing + suf + ' × ' + spacing + suf + ' grid';
+
+  document.getElementById('r-coconuts').textContent = totalCoconuts.toLocaleString('en-IN');
+  document.getElementById('r-coconuts-sub').textContent = yieldPerTree + ' per tree';
+
+  document.getElementById('r-rev-label').textContent = 'Annual Revenue / ' + uLabel;
+  document.getElementById('r-revenue').textContent = formatCurrency(annualRevenue);
+  document.getElementById('r-rev-sub').textContent = totalCoconuts.toLocaleString('en-IN') + ' × ₹' + pricePerCoconut;
+
+  document.getElementById('r-price-label').textContent = 'Max Land Price / ' + uLabel + ' for ' + targetROI + '% ROI';
+  document.getElementById('r-max-price').textContent = formatCurrency(maxLandPrice);
+
+  document.getElementById('explain').innerHTML =
+    '<strong>How it works:</strong> If annual coconut revenue per ' + uLabel.toLowerCase() + ' is <strong>' +
+    formatCurrency(annualRevenue) + '</strong>, then to earn a <strong>' + targetROI +
+    '%</strong> return, you\'d divide revenue by ' + (targetROI / 100) +
+    ' = <strong>' + formatCurrency(maxLandPrice) + '</strong>. Paying more means a lower return; paying less means a higher one.';
+}
+
+// Listen for input changes
+document.querySelectorAll('input[type="number"]').forEach(function(input) {
+  input.addEventListener('input', calculate);
+});
+
+// Initial calculation
+calculate();
+</script>
+</body>
+</html>
